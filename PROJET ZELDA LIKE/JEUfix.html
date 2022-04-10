@@ -1,0 +1,1356 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Mon 1er jeu Phaser</title>
+    <script src="//cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.js"></script>
+    <style type="text/css">
+        body {
+            margin: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <script type="text/javascript">
+        class EcranTitre extends Phaser.Scene {
+            constructor() {
+                super("EcranTitre")
+            }
+
+            preload() {
+
+                this.load.image("Title_Screen", "assets/Title_Screen.png");
+
+            }
+
+            create() {
+
+                this.imageAcceuil = this.physics.add.staticGroup();
+                this.imageAcceuil.create(480, 270, "Title_Screen").setScale(0.5)
+
+                this.cursors = this.input.keyboard.createCursorKeys();
+
+            }
+
+            update() {
+
+                if (this.cursors.space.isDown) {
+                    this.scene.start("chambre");
+                }
+
+            }
+        }
+
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        //CHAMBRE//
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        class Chambre extends Phaser.Scene {
+            constructor() {
+                super("chambre")
+            }
+
+            preload() {
+
+                this.load.image('chambre', 'assets/chambre.png');
+                this.load.tilemapTiledJSON('chambre', 'chambre.json');
+
+                this.load.spritesheet('jeena', 'assets/turn_jeena.png',
+                    { frameWidth: 32, frameHeight: 32 });
+                this.load.spritesheet('katana', 'assets/sabre item.png',
+                    { frameWidth: 32, frameHeight: 32 });
+                this.load.spritesheet('carte de sortie', 'assets/carte de sortie.png',
+                    { frameWidth: 32, frameHeight: 32 });
+
+                this.load.image('HP5', 'assets/hp.png');
+
+
+
+            }
+
+
+            //////////////// TILED ////////////////
+            create() {
+
+                this.gameOver = false;
+                this.cursors;
+                this.animationL = 'left';
+                this.animationR = 'right';
+                this.animationU = 'up';
+                this.animationD = 'down';
+                this.katanaRecup = false;
+                this.carteRecup = false;
+
+                this.carteNiveau = this.add.tilemap("chambre");
+
+                this.tileset = this.carteNiveau.addTilesetImage(
+                    "chambre",
+                    "chambre"
+                );
+                this.calque1 = this.carteNiveau.createLayer(
+                    "chambre",
+                    this.tileset
+                );
+                this.calque2 = this.carteNiveau.createLayer(
+                    "sortie",
+                    this.tileset
+                );
+
+                this.calque2.setCollisionByExclusion(-1, true);
+
+                //////////////// TAILLE MAP ////////////////
+
+                this.physics.world.setBounds(0, 0, 224, 192);
+
+                //////////////// JEENA ////////////////
+
+
+                this.player = this.physics.add.sprite(55, 55, 'jeena');
+                this.player.setCollideWorldBounds(true);
+                //this.physics.add.collider(this.player);
+                this.player.body.setSize(10, 10)
+                this.player.body.setOffset(10, 20)
+
+                //////////////// OBJET //////////////// 
+
+                this.katana = this.physics.add.sprite(160, 32, 'katana').setScale(0.5)
+                this.carteDeSortie = this.physics.add.sprite(35, 128, 'carte de sortie').setScale(0.5)
+
+
+                //////////////// COLLISION //////////////// 
+
+                this.physics.add.collider(this.player, this.katana, this.katanaCollision, null, this);
+                this.physics.add.collider(this.player, this.carteDeSortie, this.carteCollision, null, this);
+                this.physics.add.collider(this.player, this.calque2, this.changeScene, null, this);
+
+                //////////////// ANIMATION OBJET ////////////////
+                this.anims.create({
+                    key: 'katana',
+                    frames: this.anims.generateFrameNumbers('katana', { start: 0, end: 3 }),
+                    frameRate: 5,
+                    repeat: -1
+                });
+                this.anims.create({
+                    key: 'carte de sortie',
+                    frames: this.anims.generateFrameNumbers('carte de sortie', { start: 0, end: 3 }),
+                    frameRate: 5,
+                    repeat: -1
+                });
+
+
+                //////////////// ANIMATION JEENA ////////////////            
+
+                this.anims.create({
+                    key: 'left',
+                    frames: this.anims.generateFrameNumbers('jeena', { start: 16, end: 19 }),
+                    frameRate: 5,
+                    repeat: -1
+                });
+                this.anims.create({
+                    key: 'leftS',
+                    frames: this.anims.generateFrameNumbers('jeena', { start: 52, end: 55 }),
+                    frameRate: 5,
+                    repeat: -1
+                });
+
+
+                this.anims.create({
+                    key: 'turn',
+                    frames: [{ key: 'jeena', frame: 1 }],
+                    frameRate: 20
+                });
+
+
+                this.anims.create({
+                    key: 'right',
+                    frames: this.anims.generateFrameNumbers('jeena', { start: 12, end: 15 }),
+                    frameRate: 5,
+                    repeat: -1
+                });
+                this.anims.create({
+                    key: 'rightS',
+                    frames: this.anims.generateFrameNumbers('jeena', { start: 48, end: 51 }),
+                    frameRate: 5,
+                    repeat: -1
+                });
+
+
+                this.anims.create({
+                    key: 'up',
+                    frames: this.anims.generateFrameNumbers('jeena', { start: 8, end: 11 }),
+                    frameRate: 5,
+                    repeat: -1
+                });
+                this.anims.create({
+                    key: 'upS',
+                    frames: this.anims.generateFrameNumbers('jeena', { start: 44, end: 47 }),
+                    frameRate: 5,
+                    repeat: -1
+                });
+
+
+                this.anims.create({
+                    key: 'down',
+                    frames: this.anims.generateFrameNumbers('jeena', { start: 4, end: 7 }),
+                    frameRate: 5,
+                    repeat: -1
+                });
+                this.anims.create({
+                    key: 'downS',
+                    frames: this.anims.generateFrameNumbers('jeena', { start: 40, end: 43 }),
+                    frameRate: 5,
+                    repeat: -1
+                });
+
+                // barre de vie
+
+                this.barreDeVie = this.add.image(370, 200, "HP5").setScale(1)
+                this.barreDeVie.setScrollFactor(0)
+                this.barreDeVie.setInteractive()
+
+                //////////////// CAMERA ////////////////
+
+
+                this.cursors = this.input.keyboard.createCursorKeys();
+                this.cameras.main.setBounds(0, 0, 192, 160);
+                this.cameras.main.zoom = 3;                  //Camera
+                this.cameras.main.startFollow(this.player);
+
+
+                //////////////// MOUVEMENTS ////////////////
+
+
+            }
+
+            update() {
+                this.toucheAppuyer = false;
+                console.log(this.toucheAppuyer)
+
+                if (this.katanaRecup == true) {
+                    this.animationL = 'leftS'
+                    this.animationR = 'rightS'
+                    this.animationU = 'upS'
+                    this.animationD = 'downS'
+
+                }
+
+                this.katana.anims.play('katana', true);
+                this.carteDeSortie.anims.play('carte de sortie', true);
+
+                if (this.cursors.left.isDown && this.toucheAppuyer == false) {
+                    //si la touche gauche est appuyée
+                    this.player.setVelocityX(-100); //alors vitesse négative en X
+                    this.player.setVelocityY(0);
+                    this.player.anims.play(this.animationL, true); //et animation => gauche
+                    this.toucheAppuyer = true;
+
+
+                    if (this.cursors.shift.isDown) { //si la touche gauche est appuyée
+                        this.player.setVelocityX(-150); //alors vitesse négative en X
+                        this.player.setVelocityY(0);
+                        this.player.anims.play(this.animationL, true); //et animation => gauche
+                    }
+                }
+
+                else if (this.cursors.down.isDown && this.toucheAppuyer == false) {
+                    //si la touche down est appuyée
+                    this.player.setVelocityY(100); //alors vitesse négative en X
+                    this.player.setVelocityX(0);
+                    this.player.anims.play(this.animationD, true); //et animation => down
+                    this.toucheAppuyer = true;
+
+                    if (this.cursors.shift.isDown) { //si la touche shift est appuyée
+                        this.player.setVelocityY(150); //alors vitesse négative en X
+                        this.player.setVelocityX(0);
+                        this.player.anims.play(this.animationD, true); //et animation => down
+                    }
+                }
+
+                else if (this.cursors.right.isDown && this.toucheAppuyer == false) {
+                    //si la touche right est appuyée
+                    this.player.setVelocityX(100); //alors vitesse négative en X
+                    this.player.setVelocityY(0);
+                    this.player.anims.play(this.animationR, true); //et animation => right
+                    this.toucheAppuyer = true;
+
+
+                    if (this.cursors.shift.isDown) { //sinon si la touche shift est appuyée
+                        this.player.setVelocityX(150); //alors vitesse positive en X
+                        this.player.setVelocityY(0);
+                        this.player.anims.play(this.animationR, true); //et animation => right
+                    }
+                }
+
+                else if (this.cursors.up.isDown && this.toucheAppuyer == false) {
+                    //si la touche up est appuyée
+                    this.player.setVelocityY(-100); //alors vitesse négative en X
+                    this.player.setVelocityX(0);
+                    this.player.anims.play(this.animationU, true); //et animation => up
+                    this.toucheAppuyer = true;
+
+
+                    if (this.cursors.shift.isDown) { //si la touche shift est appuyée
+                        this.player.setVelocityY(-150); //alors vitesse négative en X
+                        this.player.setVelocityX(0);
+                        this.player.anims.play(this.animationU, true); //et animation => up
+                    }
+                }
+
+                else {
+                    //si rien n'est appuyée
+                    this.player.setVelocityX(0); //alors vitesse négative en X
+                    this.player.setVelocityY(0); //alors vitesse négative en X
+                    this.player.anims.play('turn', true); //et animation => turn
+                }
+            }
+
+            katanaCollision(player, katana) {
+                this.katanaRecup = true;
+                katana.disableBody(true, true)
+            }
+
+            carteCollision(player, carte) {
+                this.carteRecup = true;
+                carte.disableBody(true, true)
+            }
+            changeScene(player, sortie) {
+                if (this.carteRecup == true) {
+                    this.scene.start("map");
+                }
+            }
+        };
+
+
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        //VILLE PRINCIPALE//
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        class Map extends Phaser.Scene {
+            constructor() {
+                super("map")
+            }
+
+
+            preload() {
+
+                this.load.image('props', 'assets/props.png');
+                this.load.tilemapTiledJSON('map', 'map.json');
+
+                this.load.spritesheet('jeena', 'assets/turn_jeena.png',
+                    { frameWidth: 32, frameHeight: 32 });
+                this.load.spritesheet('katana', 'assets/sabre item.png',
+                    { frameWidth: 32, frameHeight: 32 });
+                this.load.spritesheet('carte de sortie', 'assets/carte de sortie.png',
+                    { frameWidth: 32, frameHeight: 32 });
+                this.load.spritesheet('attack', 'assets/attack.png',
+                    { frameWidth: 63, frameHeight: 32 });
+                this.load.spritesheet('Monstres', 'assets/smart.png',
+                    { frameWidth: 32, frameHeight: 32 });
+
+                this.load.image('blocInvisible', 'assets/blocInvisible.png');
+
+                this.load.image('5HP', 'assets/hp5.png');
+                this.load.image('4HP', 'assets/hp4.png');
+                this.load.image('3HP', 'assets/hp3.png');
+                this.load.image('2HP', 'assets/hp2.png');
+                this.load.image('1HP', 'assets/hp1.png');
+                this.load.image('0HP', 'assets/hp0.png');
+
+
+
+            }
+
+            //////////////// TILED ////////////////
+            create() {
+
+                this.gameOver = false;
+                this.cursors;
+                this.animationL = 'left';
+                this.animationR = 'right';
+                this.animationU = 'up';
+                this.animationD = 'down';
+                this.katanaRecup = true;
+                this.carteRecup = true;
+                this.invincible = false;
+                this.nombrecollide = 5;
+                this.compteur = 120;
+
+                this.carteNiveau = this.add.tilemap("map");
+
+                this.tileset = this.carteNiveau.addTilesetImage(
+                    "props",
+                    "props"
+                );
+                this.calque1 = this.carteNiveau.createLayer(
+                    "trottoirs",
+                    this.tileset
+                );
+                this.calque2 = this.carteNiveau.createLayer(
+                    "routes",
+                    this.tileset
+                );
+                this.calque3 = this.carteNiveau.createLayer(
+                    "mur",
+                    this.tileset
+                );
+
+
+                this.calque4 = this.carteNiveau.createLayer(
+                    "ombre mur",
+                    this.tileset
+                );
+
+                this.calque5 = this.carteNiveau.createLayer(
+                    "immeubles2",
+                    this.tileset
+                );
+
+                this.calque8 = this.carteNiveau.createLayer(
+                    "porte",
+                    this.tileset
+                );
+
+
+                //////////////// TAILLE MAP ////////////////
+
+                this.physics.world.setBounds(0, 0, 2048, 1536);
+
+                //////////////// JEENA ////////////////
+
+
+                this.player = this.physics.add.sprite(144, 790, 'jeena');
+                this.player.setCollideWorldBounds(true);
+                //this.physics.add.collider(this.player);
+                this.player.body.setSize(10, 10)
+                this.player.body.setOffset(10, 20)
+
+
+                //////////////// CALQUES ////////////////
+
+
+                this.calque6 = this.carteNiveau.createLayer(
+                    "ombre immeuble",
+                    this.tileset
+                );
+
+
+                this.calque9 = this.carteNiveau.createLayer(
+                    "11",
+                    this.tileset
+                );
+
+
+                this.calque10 = this.carteNiveau.createLayer(
+                    "10",
+                    this.tileset
+                );
+
+
+                this.calque11 = this.carteNiveau.createLayer(
+                    "9",
+                    this.tileset
+                );
+
+
+                this.calque12 = this.carteNiveau.createLayer(
+                    "8",
+                    this.tileset
+                );
+
+
+                this.calque13 = this.carteNiveau.createLayer(
+                    "7",
+                    this.tileset
+                );
+
+
+                this.calque14 = this.carteNiveau.createLayer(
+                    "6",
+                    this.tileset
+                );
+
+
+                this.calque15 = this.carteNiveau.createLayer(
+                    "5",
+                    this.tileset
+                );
+
+
+                this.calque7 = this.carteNiveau.createLayer(
+                    "immeubles1",
+                    this.tileset
+                );
+
+
+                this.calque16 = this.carteNiveau.createLayer(
+                    "arbre4",
+                    this.tileset
+                );
+
+
+                this.calque17 = this.carteNiveau.createLayer(
+                    "arbre3",
+                    this.tileset
+                );
+
+
+                this.calque18 = this.carteNiveau.createLayer(
+                    "arbre 2",
+                    this.tileset
+                );
+
+
+                this.calque19 = this.carteNiveau.createLayer(
+                    "arbres",
+                    this.tileset
+                );
+
+                this.calque20 = this.carteNiveau.createLayer(
+                    "sortie",
+                    this.tileset
+                );
+
+                this.calque20.setCollisionByExclusion(-1, true);
+
+
+
+                //////////////// COLLISION //////////////// 
+
+
+                this.physics.add.collider(this.player, this.calque20, this.changeScene, null, this);
+
+
+                this.calque7.setCollisionByProperty({ estSolide: true });
+                this.physics.add.collider(this.player, this.calque7);
+
+                this.calque8.setCollisionByProperty({ estSolide: true });
+                this.physics.add.collider(this.player, this.calque8);
+
+                //// ARBRES ////
+
+                this.calque9.setCollisionByProperty({ estSolide: true });
+                this.physics.add.collider(this.player, this.calque9);
+                this.calque10.setCollisionByProperty({ estSolide: true });
+                this.physics.add.collider(this.player, this.calque10);
+                this.calque11.setCollisionByProperty({ estSolide: true });
+                this.physics.add.collider(this.player, this.calque11);
+                this.calque12.setCollisionByProperty({ estSolide: true });
+                this.physics.add.collider(this.player, this.calque12);
+                this.calque13.setCollisionByProperty({ estSolide: true });
+                this.physics.add.collider(this.player, this.calque13);
+                this.calque14.setCollisionByProperty({ estSolide: true });
+                this.physics.add.collider(this.player, this.calque14);
+                this.calque15.setCollisionByProperty({ estSolide: true });
+                this.physics.add.collider(this.player, this.calque15);
+                this.calque16.setCollisionByProperty({ estSolide: true });
+                this.physics.add.collider(this.player, this.calque16);
+                this.calque17.setCollisionByProperty({ estSolide: true });
+                this.physics.add.collider(this.player, this.calque17);
+                this.calque18.setCollisionByProperty({ estSolide: true });
+                this.physics.add.collider(this.player, this.calque18);
+                this.calque19.setCollisionByProperty({ estSolide: true });
+                this.physics.add.collider(this.player, this.calque19);
+
+                this.calque3.setCollisionByProperty({ estSolide: true });
+                this.physics.add.collider(this.player, this.calque3);
+
+                this.calque5.setCollisionByProperty({ estSolide: true });
+                this.physics.add.collider(this.player, this.calque5);
+
+
+
+
+                //////////////// ANIMATION JEENA ////////////////            
+
+                this.anims.create({
+                    key: 'left',
+                    frames: this.anims.generateFrameNumbers('jeena', { start: 16, end: 19 }),
+                    frameRate: 5,
+                    repeat: -1
+                });
+                this.anims.create({
+                    key: 'leftS',
+                    frames: this.anims.generateFrameNumbers('jeena', { start: 52, end: 55 }),
+                    frameRate: 5,
+                    repeat: -1
+                });
+
+
+                this.anims.create({
+                    key: 'turn',
+                    frames: [{ key: 'jeena', frame: 1 }],
+                    frameRate: 20
+                });
+
+                this.anims.create({
+                    key: 'attackUp',
+                    frames: [{ key: 'attack', frame: 2 }],
+                    frameRate: 5,
+                });
+                this.anims.create({
+                    key: 'attackDown',
+                    frames: [{ key: 'attack', frame: 3 }],
+                    frameRate: 5,
+                });
+                this.anims.create({
+                    key: 'attackLeft',
+                    frames: [{ key: 'attack', frame: 1 }],
+                    frameRate: 5,
+                });
+                this.anims.create({
+                    key: 'attackRight',
+                    frames: [{ key: 'attack', frame: 0 }],
+                    frameRate: 5,
+                });
+
+
+
+
+
+                this.anims.create({
+                    key: 'leviter',
+                    frames: this.anims.generateFrameNumbers('Monstres', { start: 11, end: 16 }),
+                    frameRate: 5,
+                    repeat: -1
+                })
+
+
+
+
+
+
+                this.anims.create({
+                    key: 'up',
+                    frames: this.anims.generateFrameNumbers('jeena', { start: 8, end: 11 }),
+                    frameRate: 5,
+                    repeat: -1
+                });
+                this.anims.create({
+                    key: 'upS',
+                    frames: this.anims.generateFrameNumbers('jeena', { start: 44, end: 47 }),
+                    frameRate: 5,
+                    repeat: -1
+                });
+
+
+                this.anims.create({
+                    key: 'down',
+                    frames: this.anims.generateFrameNumbers('jeena', { start: 4, end: 7 }),
+                    frameRate: 5,
+                    repeat: -1
+                });
+                this.anims.create({
+                    key: 'downS',
+                    frames: this.anims.generateFrameNumbers('jeena', { start: 40, end: 43 }),
+                    frameRate: 5,
+                    repeat: -1
+                });
+
+                this.passage2eZone = this.physics.add.image(940, 660, "blocInvisible")
+
+                this.physics.add.overlap(this.player, this.passage2eZone, this.tpDerriereMur, null, this)
+
+                this.retourPassage2eZone = this.physics.add.image(1010, 498, "blocInvisible")
+
+                this.physics.add.overlap(this.player, this.retourPassage2eZone, this.retourDevantMur, null, this)
+
+
+                // monstres
+
+                this.Monster = this.physics.add.group({
+                    allowGravity: false,
+                    immovable: true
+                })
+
+
+                this.carteNiveau.getObjectLayer('Monstres').objects.forEach((Monster_) => {
+                    const monstreSprite = this.Monster.create(Monster_.x, Monster_.y - 32, 'smart').setOrigin(0);
+                });
+                this.Monster.playAnimation('leviter');
+                this.physics.add.collider(this.player, this.Monster, vieHeros, null, this);
+
+                // barre de vie
+
+                this.barreDeVie = this.add.image(370, 200, '5HP').setScale(1);
+                this.barreDeVie.setInteractive();
+                this.barreDeVie.setScrollFactor(0);
+
+
+                //////////////// CAMERA ////////////////
+
+
+                this.cursors = this.input.keyboard.createCursorKeys();
+                this.cameras.main.setBounds(0, 0, 2048, 1536);
+                this.cameras.main.zoom = 3;                  //Camera
+                this.cameras.main.startFollow(this.player);
+
+
+                //////////////// MOUVEMENTS ////////////////
+
+
+            }
+
+            update() {
+                this.toucheAppuyer = false;
+                console.log(this.katanaRecup)
+
+                if (this.katanaRecup == true) {
+                    this.animationL = 'leftS'
+                    this.animationR = 'rightS'
+                    this.animationU = 'upS'
+                    this.animationD = 'downS'
+                    this.attackUp = 'attackUp'
+                    this.attackDown = 'attackDown'
+                    this.attackLeft = 'attackLeft'
+                    this.attackRight = 'attackRight'
+                }
+
+                if (this.cursors.left.isDown && this.toucheAppuyer == false) {
+                    //si la touche gauche est appuyée
+                    this.player.setVelocityX(-100); //alors vitesse négative en X
+                    this.player.setVelocityY(0);
+                    this.player.anims.play(this.animationL, true); //et animation => gauche
+                    this.toucheAppuyer = true;
+                    this.player.direction = "left"
+
+
+                    if (this.cursors.shift.isDown) { //si la touche gauche est appuyée
+                        this.player.setVelocityX(-150); //alors vitesse négative en X
+                        this.player.setVelocityY(0);
+                        this.player.anims.play('leftS', true); //et animation => gauche
+                    }
+                }
+
+                else if (this.cursors.down.isDown && this.toucheAppuyer == false) {
+                    //si la touche down est appuyée
+                    this.player.setVelocityY(100); //alors vitesse négative en X
+                    this.player.setVelocityX(0);
+                    this.player.anims.play(this.animationD, true); //et animation => down
+                    this.toucheAppuyer = true;
+                    this.player.direction = "down"
+
+                    if (this.cursors.shift.isDown) { //si la touche shift est appuyée
+                        this.player.setVelocityY(150); //alors vitesse négative en X
+                        this.player.setVelocityX(0);
+                        this.player.anims.play('downS', true); //et animation => down
+                    }
+                }
+
+                else if (this.cursors.right.isDown && this.toucheAppuyer == false) {
+                    //si la touche right est appuyée
+                    this.player.setVelocityX(100); //alors vitesse négative en X
+                    this.player.setVelocityY(0);
+                    this.player.anims.play(this.animationR, true); //et animation => right
+                    this.toucheAppuyer = true;
+                    this.player.direction = "right"
+
+
+                    if (this.cursors.shift.isDown) { //sinon si la touche shift est appuyée
+                        this.player.setVelocityX(150); //alors vitesse positive en X
+                        this.player.setVelocityY(0);
+                        this.player.anims.play('rightS', true); //et animation => right
+                    }
+                }
+
+                else if (this.cursors.up.isDown && this.toucheAppuyer == false) {
+                    //si la touche up est appuyée
+                    this.player.setVelocityY(-100); //alors vitesse négative en X
+                    this.player.setVelocityX(0);
+                    this.player.anims.play(this.animationU, true); //et animation => up
+                    this.toucheAppuyer = true;
+                    this.player.direction = "up"
+
+
+                    if (this.cursors.shift.isDown) { //si la touche shift est appuyée
+                        this.player.setVelocityY(-150); //alors vitesse négative en X
+                        this.player.setVelocityX(0);
+                        this.player.anims.play('upS', true); //et animation => up
+                    }
+                }
+
+
+
+                else {
+                    //si rien n'est appuyée
+                    this.player.setVelocityX(0); //alors vitesse négative en X
+                    this.player.setVelocityY(0); //alors vitesse négative en X
+                    this.player.anims.play('turn', true); //et animation => turn
+                }
+
+                if (this.cursors.space.isDown) {
+                    //si la touche up est appuyée
+                    //et animation => up
+                    console.log(this.cursors);
+                    if (this.player.direction == "left") {
+                        this.player.anims.play(this.attackLeft, true);
+                        this.player.body.setSize(20, 30)
+                        this.player.setOffset(2, 6)
+                    }
+                    if (this.player.direction == "up") {
+                        this.player.anims.play(this.attackUp, true);
+                        this.player.body.setSize(20, 20)
+                        this.player.body.setOffset(20, -6)
+                    }
+                    if (this.player.direction == "right") {
+                        this.player.anims.play(this.attackRight, true);
+                        this.player.body.setSize(20, 30)
+                        this.player.setOffset(40, 6)
+                    }
+                    if (this.player.direction == "down") {
+                        this.player.anims.play(this.attackDown, true);
+                        this.player.body.setSize(20, 20)
+                        this.player.body.setOffset(20, 20)
+                    }
+                }
+
+                if (this.cursors.space.isUp) {
+                    this.player.body.setSize(10, 10)
+                    this.player.setOffset(10, 20)
+                }
+
+                if (this.invincible == true) {
+                    this.compteur--;
+                    if (this.compteur <= 0) {
+                        this.invincible = false;
+                        this.compteur = 120;
+                        this.player.setTint(0xffffff);
+                    }
+                }
+
+
+            }
+
+
+            tpDerriereMur(player, tpDerriereMur) {
+                player.x = 940
+                player.y = 490
+            }
+
+            retourDevantMur(player, retourPassage2eZone) {
+                player.x = 940
+                player.y = 696
+            }
+
+            changeScene(player, sortie) {
+                if (this.carteRecup == true) {
+                    this.scene.start("mapSmart.");
+                }
+            }
+
+
+
+
+        };
+
+
+
+        function vieHeros(player, vieJoueur, barreDeVie) {
+
+            if (this.invincible == false) {
+                this.nombrecollide -= 1;
+                player.setTint(0xff0000);
+                this.invincible = true
+            }
+
+            if (this.nombrecollide == 5) {
+                this.barreDeVie.setTexture("5HP");
+                this.barreDeVie.setInteractive();
+                this.barreDeVie.setScrollFactor(0);
+            }
+
+            if (this.nombrecollide == 4) {
+                this.barreDeVie.setTexture("4HP");
+                this.barreDeVie.setInteractive();
+                this.barreDeVie.setScrollFactor(0);
+            }
+
+            if (this.nombrecollide == 3) {
+                this.barreDeVie.setTexture("3HP");
+                this.barreDeVie.setInteractive();
+                this.barreDeVie.setScrollFactor(0);
+            }
+
+            if (this.nombrecollide == 2) {
+                this.barreDeVie.setTexture("2HP");
+                this.barreDeVie.setInteractive();
+                this.barreDeVie.setScrollFactor(0);
+            }
+
+            if (this.nombrecollide == 1) {
+                this.barreDeVie.setTexture("1HP");
+                this.barreDeVie.setInteractive();
+                this.barreDeVie.setScrollFactor(0);
+            }
+
+            if (this.nombrecollide == 0) {
+                this.barreDeVie.setTexture("0HP");
+                this.barreDeVie.setInteractive();
+                this.barreDeVie.setScrollFactor(0);
+            }
+
+
+            if (this.nombrecollide <= 0) {
+                this.scene.start("GameOver");
+            }
+        }
+
+
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        //MAP SMART//
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////
+        class mapSmart extends Phaser.Scene {
+            constructor() {
+                super("mapSmart.")
+            }
+
+
+            preload() {
+
+                this.load.image('props', 'assets/props.png');
+                this.load.tilemapTiledJSON('mapSmart', 'mapSmart.json');
+
+                this.load.spritesheet('jeena', 'assets/turn_jeena.png',
+                    { frameWidth: 32, frameHeight: 32 });
+                this.load.spritesheet('katana', 'assets/sabre item.png',
+                    { frameWidth: 32, frameHeight: 32 });
+                this.load.spritesheet('carte de sortie', 'assets/carte de sortie.png',
+                    { frameWidth: 32, frameHeight: 32 });
+                this.load.spritesheet('attack', 'assets/attack.png',
+                    { frameWidth: 63, frameHeight: 32 });
+                this.load.spritesheet('Monstres', 'assets/smart.png',
+                    { frameWidth: 32, frameHeight: 32 });
+
+
+                this.load.image('5HP', 'assets/hp5.png');
+                this.load.image('4HP', 'assets/hp4.png');
+                this.load.image('3HP', 'assets/hp3.png');
+                this.load.image('2HP', 'assets/hp2.png');
+                this.load.image('1HP', 'assets/hp1.png');
+                this.load.image('0HP', 'assets/hp0.png');
+
+
+
+            }
+
+            //////////////// TILED ////////////////
+            create() {
+
+                this.gameOver = false;
+                this.cursors;
+                this.animationL = 'left';
+                this.animationR = 'right';
+                this.animationU = 'up';
+                this.animationD = 'down';
+                this.katanaRecup = true;
+                this.invincible = false;
+                this.nombrecollide = 5;
+                this.compteur = 120;
+
+
+                this.carteNiveau = this.add.tilemap("mapSmart");
+
+
+                this.tileset = this.carteNiveau.addTilesetImage(
+                    "props",
+                    "props"
+                );
+
+                this.calque4 = this.carteNiveau.createLayer(
+                    "sol",
+                    this.tileset
+                );
+                this.calque1 = this.carteNiveau.createLayer(
+                    "mur",
+                    this.tileset
+                );
+                this.calque2 = this.carteNiveau.createLayer(
+                    "sortie",
+                    this.tileset
+                );
+                this.calque3 = this.carteNiveau.createLayer(
+                    "smarts",
+                    this.tileset
+                );
+
+
+                //////////////// TAILLE MAP ////////////////
+
+                this.physics.world.setBounds(0, 0, 224, 384);
+
+                //////////////// JEENA ////////////////
+
+
+                this.player = this.physics.add.sprite(33, 80, 'jeena');
+                this.player.setCollideWorldBounds(true);
+                //this.physics.add.collider(this.player);
+                this.player.body.setSize(10, 10)
+                this.player.body.setOffset(10, 20)
+
+
+                //////////////// COLLISION //////////////// 
+
+
+                //////////////// ANIMATION JEENA ////////////////            
+
+                this.anims.create({
+                    key: 'left',
+                    frames: this.anims.generateFrameNumbers('jeena', { start: 16, end: 19 }),
+                    frameRate: 5,
+                    repeat: -1
+                });
+                this.anims.create({
+                    key: 'leftS',
+                    frames: this.anims.generateFrameNumbers('jeena', { start: 52, end: 55 }),
+                    frameRate: 5,
+                    repeat: -1
+                });
+
+
+                this.anims.create({
+                    key: 'turn',
+                    frames: [{ key: 'jeena', frame: 1 }],
+                    frameRate: 20
+                });
+
+                this.anims.create({
+                    key: 'attackUp',
+                    frames: [{ key: 'attack', frame: 2 }],
+                    frameRate: 5,
+                });
+                this.anims.create({
+                    key: 'attackDown',
+                    frames: [{ key: 'attack', frame: 3 }],
+                    frameRate: 5,
+                });
+                this.anims.create({
+                    key: 'attackLeft',
+                    frames: [{ key: 'attack', frame: 1 }],
+                    frameRate: 5,
+                });
+                this.anims.create({
+                    key: 'attackRight',
+                    frames: [{ key: 'attack', frame: 0 }],
+                    frameRate: 5,
+                });
+
+
+
+                this.anims.create({
+                    key: 'up',
+                    frames: this.anims.generateFrameNumbers('jeena', { start: 8, end: 11 }),
+                    frameRate: 5,
+                    repeat: -1
+                });
+                this.anims.create({
+                    key: 'upS',
+                    frames: this.anims.generateFrameNumbers('jeena', { start: 44, end: 47 }),
+                    frameRate: 5,
+                    repeat: -1
+                });
+
+
+                this.anims.create({
+                    key: 'down',
+                    frames: this.anims.generateFrameNumbers('jeena', { start: 4, end: 7 }),
+                    frameRate: 5,
+                    repeat: -1
+                });
+                this.anims.create({
+                    key: 'downS',
+                    frames: this.anims.generateFrameNumbers('jeena', { start: 40, end: 43 }),
+                    frameRate: 5,
+                    repeat: -1
+                });
+
+                // monstres
+
+                this.Monster = this.physics.add.group({
+                    allowGravity: false,
+                    immovable: true
+                })
+
+
+                this.carteNiveau.getObjectLayer('Monstres').objects.forEach((Monster_) => {
+                    const monstreSprite = this.Monster.create(Monster_.x, Monster_.y - 32, 'smart').setOrigin(0);
+                });
+                this.Monster.playAnimation('leviter');
+                this.physics.add.collider(this.player, this.Monster, vieHeros, null, this);
+
+                // barre de vie
+
+                this.barreDeVie = this.add.image(370, 200, '5HP').setScale(1);
+                this.barreDeVie.setInteractive();
+                this.barreDeVie.setScrollFactor(0);
+
+
+                //////////////// CAMERA ////////////////
+
+
+                this.cursors = this.input.keyboard.createCursorKeys();
+                this.cameras.main.setBounds(0, 0, 224, 384);
+                this.cameras.main.zoom = 3;                  //Camera
+                this.cameras.main.startFollow(this.player);
+
+
+                //////////////// MOUVEMENTS ////////////////
+
+
+            }
+
+            update() {
+                this.toucheAppuyer = false;
+                console.log(this.katanaRecup)
+
+                if (this.katanaRecup == true) {
+                    this.animationL = 'leftS'
+                    this.animationR = 'rightS'
+                    this.animationU = 'upS'
+                    this.animationD = 'downS'
+                    this.attackUp = 'attackUp'
+                    this.attackDown = 'attackDown'
+                    this.attackLeft = 'attackLeft'
+                    this.attackRight = 'attackRight'
+                }
+
+                if (this.cursors.left.isDown && this.toucheAppuyer == false) {
+                    //si la touche gauche est appuyée
+                    this.player.setVelocityX(-100); //alors vitesse négative en X
+                    this.player.setVelocityY(0);
+                    this.player.anims.play(this.animationL, true); //et animation => gauche
+                    this.toucheAppuyer = true;
+                    this.player.direction = "left"
+
+
+                    if (this.cursors.shift.isDown) { //si la touche gauche est appuyée
+                        this.player.setVelocityX(-150); //alors vitesse négative en X
+                        this.player.setVelocityY(0);
+                        this.player.anims.play('leftS', true); //et animation => gauche
+                    }
+                }
+
+                else if (this.cursors.down.isDown && this.toucheAppuyer == false) {
+                    //si la touche down est appuyée
+                    this.player.setVelocityY(100); //alors vitesse négative en X
+                    this.player.setVelocityX(0);
+                    this.player.anims.play(this.animationD, true); //et animation => down
+                    this.toucheAppuyer = true;
+                    this.player.direction = "down"
+
+                    if (this.cursors.shift.isDown) { //si la touche shift est appuyée
+                        this.player.setVelocityY(150); //alors vitesse négative en X
+                        this.player.setVelocityX(0);
+                        this.player.anims.play('downS', true); //et animation => down
+                    }
+                }
+
+                else if (this.cursors.right.isDown && this.toucheAppuyer == false) {
+                    //si la touche right est appuyée
+                    this.player.setVelocityX(100); //alors vitesse négative en X
+                    this.player.setVelocityY(0);
+                    this.player.anims.play(this.animationR, true); //et animation => right
+                    this.toucheAppuyer = true;
+                    this.player.direction = "right"
+
+
+                    if (this.cursors.shift.isDown) { //sinon si la touche shift est appuyée
+                        this.player.setVelocityX(150); //alors vitesse positive en X
+                        this.player.setVelocityY(0);
+                        this.player.anims.play('rightS', true); //et animation => right
+                    }
+                }
+
+                else if (this.cursors.up.isDown && this.toucheAppuyer == false) {
+                    //si la touche up est appuyée
+                    this.player.setVelocityY(-100); //alors vitesse négative en X
+                    this.player.setVelocityX(0);
+                    this.player.anims.play(this.animationU, true); //et animation => up
+                    this.toucheAppuyer = true;
+                    this.player.direction = "up"
+
+
+                    if (this.cursors.shift.isDown) { //si la touche shift est appuyée
+                        this.player.setVelocityY(-150); //alors vitesse négative en X
+                        this.player.setVelocityX(0);
+                        this.player.anims.play('upS', true); //et animation => up
+                    }
+                }
+
+
+
+                else {
+                    //si rien n'est appuyée
+                    this.player.setVelocityX(0); //alors vitesse négative en X
+                    this.player.setVelocityY(0); //alors vitesse négative en X
+                    this.player.anims.play('turn', true); //et animation => turn
+                }
+
+                if (this.cursors.space.isDown) {
+                    //si la touche up est appuyée
+                    //et animation => up
+                    console.log(this.cursors);
+                    if (this.player.direction == "left") {
+                        this.player.anims.play(this.attackLeft, true);
+                        this.player.body.setSize(20, 30)
+                        this.player.setOffset(2, 6)
+                    }
+                    if (this.player.direction == "up") {
+                        this.player.anims.play(this.attackUp, true);
+                        this.player.body.setSize(20, 20)
+                        this.player.body.setOffset(20, -6)
+                    }
+                    if (this.player.direction == "right") {
+                        this.player.anims.play(this.attackRight, true);
+                        this.player.body.setSize(20, 30)
+                        this.player.setOffset(40, 6)
+                    }
+                    if (this.player.direction == "down") {
+                        this.player.anims.play(this.attackDown, true);
+                        this.player.body.setSize(20, 20)
+                        this.player.body.setOffset(20, 20)
+                    }
+                }
+
+                if (this.cursors.space.isUp) {
+                    this.player.body.setSize(10, 10)
+                    this.player.setOffset(10, 20)
+                }
+
+                if (this.invincible == true) {
+                    this.compteur--;
+                    if (this.compteur <= 0) {
+                        this.invincible = false;
+                        this.compteur = 120;
+                        this.player.setTint(0xffffff);
+                    }
+                }
+            }
+
+
+        };
+
+        function vieHeros(player, vieJoueur, barreDeVie) {
+
+            if (this.invincible == false) {
+                this.nombrecollide -= 1;
+                player.setTint(0xff0000);
+                this.invincible = true
+            }
+
+            if (this.nombrecollide == 5) {
+                this.barreDeVie.setTexture("5HP");
+                this.barreDeVie.setInteractive();
+                this.barreDeVie.setScrollFactor(0);
+            }
+
+            if (this.nombrecollide == 4) {
+                this.barreDeVie.setTexture("4HP");
+                this.barreDeVie.setInteractive();
+                this.barreDeVie.setScrollFactor(0);
+            }
+
+            if (this.nombrecollide == 3) {
+                this.barreDeVie.setTexture("3HP");
+                this.barreDeVie.setInteractive();
+                this.barreDeVie.setScrollFactor(0);
+            }
+
+            if (this.nombrecollide == 2) {
+                this.barreDeVie.setTexture("2HP");
+                this.barreDeVie.setInteractive();
+                this.barreDeVie.setScrollFactor(0);
+            }
+
+            if (this.nombrecollide == 1) {
+                this.barreDeVie.setTexture("1HP");
+                this.barreDeVie.setInteractive();
+                this.barreDeVie.setScrollFactor(0);
+            }
+
+            if (this.nombrecollide == 0) {
+                this.barreDeVie.setTexture("0HP");
+                this.barreDeVie.setInteractive();
+                this.barreDeVie.setScrollFactor(0);
+            }
+
+
+            if (this.nombrecollide <= 0) {
+                this.scene.start("GameOver");
+            }
+        }
+
+
+
+
+        var config = {
+            type: Phaser.CANVAS,
+            width: 960, height: 540,           //config de la fenetre et du niveau en generale
+            physics: {
+                default: 'arcade',
+                arcade: {
+                    debug: false,
+                }
+            },
+            pixelArt: true,
+            input: { gamepad: true },
+            scene: [EcranTitre, Map, Chambre, mapSmart]
+        };
+        new Phaser.Game(config);
+
+    </script>
+</body>
+
+</html>
